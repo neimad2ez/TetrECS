@@ -115,9 +115,13 @@ public class GameBlock extends Canvas {
             paintColor(COLOURS[value.get()]);
         }
 //        logger.info("Center is " + center);
-        //Global variable center always false unless called true by center() method, once center() method is run then center goes back to false.
+        //Need help explaining
+        //Center variable set true by currentPieceBoard.blocks[1][1].center(); and currentPieceBoard when painted will always paint circle
         if (center) {
             center();
+        }
+        if (hover) {
+            paintHover();
         }
     }
 
@@ -207,11 +211,34 @@ public class GameBlock extends Canvas {
         value.bind(input);
     }
 
+    /**
+     * When center is true it draws a circle on the current piece
+     */
     public void center() {
         center = true;
         var gc = getGraphicsContext2D();
         gc.setFill(Color.color(1,1,0.9,0.6));
         gc.fillOval(width/4, height/4, width/2, height/2);
+    }
+
+    /**
+     * Sets hover true or false and re-paints the grid
+     * @param hover Checks if hover is already hovering over another block
+     */
+    public void hover(Boolean hover) {
+        this.hover = hover;
+        paint();
+    }
+
+    /**
+     * Paints hover grey
+     */
+
+    public void paintHover() {
+        var gc = getGraphicsContext2D();
+        gc.setFill(Color.rgb(255,255,255,0.5));
+        gc.fillRect(0,0,width,height);
+
     }
 
     /**

@@ -9,6 +9,7 @@ import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import uk.ac.soton.comp1206.App;
+import uk.ac.soton.comp1206.game.Game;
 import uk.ac.soton.comp1206.network.Communicator;
 import uk.ac.soton.comp1206.scene.*;
 
@@ -81,14 +82,31 @@ public class GameWindow {
     }
 
     /**
-     * Display the single player challenge
+     * Display the single player challenge scene
      */
     public void startChallenge() {
         loadScene(new ChallengeScene(this));
     }
 
+    /**
+     * Displays the instructions scene
+     */
+
     public void startInstructions() {
         loadScene(new InstructionScene(this));
+    }
+    /**
+     * Displays the scores
+     */
+    public void startScores(Game game) {
+        loadScene(new ScoreScene(this, game));
+    }
+
+    /**
+     * Displays the Multiplayer scene
+     */
+    public void startMultiplayer() {
+        loadScene(new LobbyScene(this));
     }
 
     /**

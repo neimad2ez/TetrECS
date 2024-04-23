@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import uk.ac.soton.comp1206.event.BlockClickedListener;
 import uk.ac.soton.comp1206.event.RightClickedListener;
+import uk.ac.soton.comp1206.game.Game;
 import uk.ac.soton.comp1206.game.Grid;
 
 import java.util.HashSet;
@@ -156,8 +157,26 @@ public class GameBoard extends GridPane {
 
         //Add a mouse click handler to the block to trigger GameBoard blockClicked method
         block.setOnMouseClicked((e) -> blockClicked(e, block));
+        block.setOnMouseEntered((event -> {
+            hover(block);
+        }));
+
+        block.setOnMouseExited(event -> {
+            block.hover(false);
+        });
 
         return block;
+    }
+
+    /**
+     * Sets block to be hovered into gameBlock
+     * @param gameBlock GameBlock to be placed on grid
+     */
+    public void hover(GameBlock gameBlock) {
+        hoveredBlock = gameBlock;
+        hoveredBlock.hover(true);
+//        boolean canPlay = grid.canPlayPiece(game.getCurrent,hoveredBlock.getX(),hoveredBlock.getY());
+//        logger.info("canPlay is" + canPlay);
     }
 
     /**

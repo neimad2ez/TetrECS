@@ -91,7 +91,7 @@ public class Game {
     /**
      * Game over listener
      */
-    protected GameOverListener gameOverListener;
+    protected GameOverListener gameOverListener = null;
 
     /**
      * Create a new game with the specified rows and columns. Creates a corresponding grid model.
@@ -139,10 +139,15 @@ public class Game {
 
         //Checks if you can play the piece then, places the piece and gets a new piece
         if (grid.canPlayPiece(currentPiece,x,y)) {
+            gameLoopListener();
             grid.playPiece(currentPiece,x,y);
             Multimedia.playAudio("place.wav");
             afterPiece();
             nextPiece();
+            //Cancels loop
+            loop.cancel(false);
+            //Restarts loop
+            loop = timer.schedule(this::gameLoop, getTimerDelay(), TimeUnit.MILLISECONDS);
         } else {
             Multimedia.playAudio("fail.wav");
         }
@@ -157,6 +162,10 @@ public class Game {
 //
 //        //Update the grid with the new value
 //        grid.set(x,y,newValue);
+    }
+
+    public GamePiece getCurrentPiece() {
+        return currentPiece;
     }
 
     /**
@@ -321,7 +330,7 @@ public class Game {
         //Gets multiplier (different as it's a simpleintegerproperty)
         int mul = multiplier.get();
         int toAdd = numOfLines * numOfBlocks * 10 * mul;
-        score.setValue(toAdd);
+        score.setValue(score.get() + toAdd);
     }
 
     /**
@@ -391,12 +400,28 @@ public class Game {
     }
 
     /**
+     * Listens for timer to end
+     */
+
+    public void gameLoopListener() {
+        if (gameLoopListener != null) {
+            gameLoopListener.setOnGameLoop(getTimerDelay());
+        }
+    }
+
+    /**
      * Events that happen when timer ends
      */
     public void gameLoop() {
         updateLives();
         updateMultiplier();
         nextPiece();
+        gameLoopListener();
+//        if (lives.get() > 0) {
+//            updateMultiplier();
+//            nextPiece();
+//            gameLoopListener();
+//        }
         loop = timer.schedule(this::gameLoop, getTimerDelay(), TimeUnit.MILLISECONDS);
     }
 
@@ -411,11 +436,19 @@ public class Game {
         } else {
             logger.info("Game over");
             if (gameOverListener != null) {
-                logger.info("IT WORKED");
-                gameOverListener.GameOver();
+                Platform.runLater(() -> gameOverListener.gameOver());
             }
-
+            Multimedia.stopMusic();
+            shutdown();
         }
+    }
+    /**
+     *
+     */
+    public void shutdown() {
+        gameLoopListener.setOnGameLoop(0);
+        loop.cancel(true);
+        timer.shutdownNow();
     }
 
     /**
@@ -429,6 +462,7 @@ public class Game {
     public void setOnGameOver(GameOverListener gameOverListener) {
         this.gameOverListener = gameOverListener;
     }
+
 
 
 //    public void clear(HashSet<GameBlockCoordinate> hash) {

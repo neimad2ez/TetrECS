@@ -1,28 +1,39 @@
 package uk.ac.soton.comp1206.scene;
 
-import javafx.application.Platform;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.TextField;
+import javafx.scene.control.Button;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Text;
+import javafx.util.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import uk.ac.soton.comp1206.component.GameBlock;
 import uk.ac.soton.comp1206.component.GameBlockCoordinate;
 import uk.ac.soton.comp1206.component.GameBoard;
 import uk.ac.soton.comp1206.component.PieceBoard;
-import uk.ac.soton.comp1206.event.NextPieceListener;
 import uk.ac.soton.comp1206.game.Game;
 import uk.ac.soton.comp1206.game.GamePiece;
 import uk.ac.soton.comp1206.ui.GamePane;
 import uk.ac.soton.comp1206.ui.GameWindow;
 import uk.ac.soton.comp1206.ui.Multimedia;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.List;
 
 /**
  * The Single Player challenge scene. Holds the UI for the single player challenge mode in the game.
@@ -30,7 +41,18 @@ import java.util.HashSet;
 public class ChallengeScene extends BaseScene {
 
     private static final Logger logger = LogManager.getLogger(MenuScene.class);
+    /**
+     * Game class
+     */
     protected Game game;
+    /**
+     * Rectangle used for timer
+     */
+    private Rectangle timerBar;
+    /**
+     * HBox to put on to mainpane
+     */
+    private HBox timerBox;
 
     /**
      * Current pieceboard to place down
@@ -40,7 +62,15 @@ public class ChallengeScene extends BaseScene {
      * Next pieceboard to place down
      */
     protected PieceBoard nextPieceBoard;
+    /**
+     * Gameboard variable
+     */
     protected GameBoard board;
+    /**
+     * Current high score
+     */
+
+    public IntegerProperty highScore = new SimpleIntegerProperty();
 
     /**
      * Create a new Single Player challenge scene
@@ -49,6 +79,8 @@ public class ChallengeScene extends BaseScene {
     public ChallengeScene(GameWindow gameWindow) {
         super(gameWindow);
         logger.info("Creating Challenge Scene");
+        int currentHighscore = getHighScore();
+        highScore.set(currentHighscore);
     }
 
     /**
@@ -73,12 +105,16 @@ public class ChallengeScene extends BaseScene {
 
         // Top
         var top = new HBox();
-        top.setSpacing(100);
+        top.setSpacing(40);
         top.setAlignment(Pos.CENTER);
-        BorderPane.setMargin(top, new Insets(35, 0, 0, 0));
+        BorderPane.setMargin(top, new Insets(50, 0, 0, 0));
         mainPane.setTop(top);
-        var title = new Text("TetrECS");
-        title.getStyleClass().add("bigtitle");
+
+        //Title
+        Image image = new Image(getClass().getResourceAsStream("/images/TetrECS.png"));
+        ImageView title = new ImageView(image);
+        title.setPreserveRatio(true);
+        title.setFitHeight(100);
 
         //Score
         var scoreBox = new VBox();
@@ -104,24 +140,34 @@ public class ChallengeScene extends BaseScene {
 
         top.getChildren().addAll(livesBox, title, scoreBox);
 
-        //Right
+        //Right box
         var right = new VBox();
         right.setAlignment(Pos.CENTER);
-        right.setPadding(new Insets(0, 0, 0, 0));
+        right.setPadding(new Insets(0, 0, 0, -45));
+        right.setSpacing(20);
+        //down, left, up right
         mainPane.setRight(right);
 
-        //Left
+        //Left box
         var left = new VBox();
         left.setAlignment(Pos.CENTER);
-        right.setPadding(new Insets(0,0,0,0));
-        mainPane.setRight(right);
+        left.setPadding(new Insets(0, 0, 0, 50));
+        left.setSpacing(20);
+        mainPane.setLeft(left);
 
-        //Multiplier
+        //Multiplier text
         var multiplierText = new Text("Multiplier");
         multiplierText.getStyleClass().add("heading");
+
+        //Multiplier
         var multiplier = new Text();
         multiplier.getStyleClass().add("hiscore");
         multiplier.textProperty().bind(game.multiplier.asString());
+
+        //Multipler box
+        var multiplierBox = new VBox();
+        multiplierBox.setAlignment(Pos.CENTER);
+        multiplierBox.getChildren().addAll(multiplierText, multiplier);
 
         //Current piece text
         var currentPieceText = new Text("Current Piece");
@@ -135,6 +181,11 @@ public class ChallengeScene extends BaseScene {
             rotate();
         });
 
+        //Current piece box
+        var currentPieceBox = new VBox();
+        currentPieceBox.setAlignment(Pos.CENTER);
+        currentPieceBox.getChildren().addAll(currentPieceText, currentPieceBoard);
+
         //Next piece
         nextPieceBoard = new PieceBoard(75,75);
         nextPieceBoard.setOnMouseClicked(event -> {
@@ -146,11 +197,45 @@ public class ChallengeScene extends BaseScene {
         var nextPieceText = new Text("Next Piece");
         nextPieceText.getStyleClass().add("heading");
 
+        //Next piece box
+        var nextPieceBox = new VBox();
+        nextPieceBox.setAlignment(Pos.CENTER);
+        nextPieceBox.getChildren().addAll(nextPieceText, nextPieceBoard);
 
-        right.getChildren().addAll(multiplierText, multiplier, currentPieceText, currentPieceBoard, nextPieceText, nextPieceBoard);
+        //Highscore text
+        var highscoreText = new Text("High Score");
+        highscoreText.getStyleClass().add("heading");
+
+        //Highscore
+        var highScoreNum = new Text();
+        highScoreNum.getStyleClass().add("hiscore");
+        highScoreNum.textProperty().bind(highScore.asString());
+
+        //Highscore box
+        var highscoreBox = new VBox();
+        highscoreBox.setAlignment(Pos.CENTER);
+        highscoreBox.getChildren().addAll(highscoreText, highScoreNum);
+
+        //Level text
+        var levelText = new Text("Level");
+        levelText.getStyleClass().add("heading");
+
+        //Level
+        var level = new Text();
+        level.getStyleClass().add("level");
+        level.textProperty().bind(game.level.asString());
+
+        //Level box
+        var levelBox = new VBox();
+        levelBox.setAlignment(Pos.CENTER);
+        levelBox.getChildren().addAll(levelText, level);
+
+        right.getChildren().addAll(currentPieceBox, nextPieceBox);
+        left.getChildren().addAll(highscoreBox, levelBox, multiplierBox);
 
         //Made board into global variable
         board = new GameBoard(game.getGrid(),gameWindow.getWidth()/2,gameWindow.getWidth()/2);
+        board.setPadding(new Insets(0, 70, 0, 30));
         mainPane.setCenter(board);
 
         //Places a piece if left click occurs
@@ -161,6 +246,20 @@ public class ChallengeScene extends BaseScene {
             }
         });
 
+        //Countdown bar
+        timerBox = new HBox();
+        timerBar = new Rectangle();
+        timerBar.setHeight(10);
+        timerBar.setWidth(gameWindow.getWidth());
+        timerBar.setFill(Color.GREEN);
+        timerBox.getChildren().addAll(timerBar);
+        mainPane.setBottom(timerBox);
+
+        Button button = new Button();
+        button.setOnMouseClicked(event -> {
+            gameOver();
+        });
+        left.getChildren().add(button);
     }
 
     /**
@@ -169,6 +268,11 @@ public class ChallengeScene extends BaseScene {
      */
     private void blockClicked(GameBlock gameBlock) {
         game.blockClicked(gameBlock);
+        //Checks if score is greater than high score, if greater, high score becomes current score
+        if (game.score.getValue() > getHighScore()) {
+            logger.info("New highscore: "+ highScore);
+            highScore.set(game.score.getValue());
+        }
     }
 
     public void nextPiece(GamePiece gp) {
@@ -176,8 +280,14 @@ public class ChallengeScene extends BaseScene {
         nextPieceBoard.setPiece(game.nextPiece);
     }
 
+    /**
+     * Causes the block to fade away when a line is completed
+     * @param coordinates coordinates of the blocks which will disappear
+     */
+
     public void fadeOut(HashSet<GameBlockCoordinate> coordinates) {
         logger.info("Fade out");
+        //Fade out animation
         board.fadeOut(coordinates);
     }
 
@@ -223,10 +333,47 @@ public class ChallengeScene extends BaseScene {
     }
 
     /**
-     * Game over sends you back to menu
+     * Game over sends you to scores screen
      */
     public void gameOver() {
-        logger.info("Menu booted up again");
+        logger.info("Game over");
+        timerBar.setWidth(0);
+        timerBar.setHeight(0);
+        timerBar.setOpacity(0);
+        gameWindow.startScores(game);
+    }
+
+    public int getHighScore() {
+        logger.info("Updated high score");
+        try {
+            var scoreFile = Paths.get("localScores.txt");
+            List<String> scores = Files.readAllLines(scoreFile);
+            String[] parts = scores.get(0).split(":");
+            int highscore = Integer.valueOf(parts[1]);
+            logger.info("High score is: " + highscore);
+            return highscore;
+        } catch(IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Timer animation for timer bar which keeps track of time in tehg ame
+     * @param time amount of time per round
+     */
+    public void timerAnimation(int time) {
+        Timeline timeline = new Timeline();
+        KeyValue start = new KeyValue(timerBar.widthProperty(), gameWindow.getWidth());
+        KeyValue green = new KeyValue(timerBar.fillProperty(), Color.GREEN);
+        KeyValue yellow = new KeyValue(timerBar.fillProperty(), Color.YELLOW);
+        KeyValue red = new KeyValue(timerBar.fillProperty(), Color.RED);
+        KeyValue end = new KeyValue(timerBar.widthProperty(), 0);
+        timeline.getKeyFrames().add(new KeyFrame(new Duration(0), start));
+        timeline.getKeyFrames().add(new KeyFrame(new Duration(0), green));
+        timeline.getKeyFrames().add(new KeyFrame(new Duration((float) time/2), yellow));
+        timeline.getKeyFrames().add(new KeyFrame(new Duration((float) time * 3/4), red));
+        timeline.getKeyFrames().add(new KeyFrame(new Duration(time), end));
+        timeline.play();
     }
 
     /**
@@ -235,6 +382,7 @@ public class ChallengeScene extends BaseScene {
     @Override
     public void initialise() {
         logger.info("Initialising Challenge");
+        game.setOnGameLoop(this::timerAnimation);
         game.start();
         currentPieceBoard.setPiece(game.currentPiece);
         nextPieceBoard.setPiece(game.nextPiece);
@@ -242,6 +390,7 @@ public class ChallengeScene extends BaseScene {
         game.setOnLineCleared(this::fadeOut);
         game.setNextPieceListener(this::nextPiece);
         game.setOnGameOver(this::gameOver);
+//        game.setOnGameLoop(new GameLoopListener(){} );
         scene.setOnKeyPressed(event -> {
             if (event.getCode().equals(KeyCode.ESCAPE)) {
                 gameWindow.startMenu();

@@ -7,5 +7,5 @@ public interface GameOverListener {
     /**
      * What happens when game is over
      */
-    public void GameOver();
+    public void gameOver();
 }

@@ -7,6 +7,6 @@
 .project
 .settings
 .settings/
-scores.txt
+localScores.txt
 target
 target/

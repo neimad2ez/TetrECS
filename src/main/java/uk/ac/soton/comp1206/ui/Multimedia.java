@@ -31,7 +31,6 @@ public class Multimedia {
         logger.info("Music playing: " + music);
     }
 
-
     /**
      * Plays audio effects
      * @param audio audio name
@@ -41,5 +40,9 @@ public class Multimedia {
         audioPlayer = new MediaPlayer(backgroundMusic);
         audioPlayer.play();
         logger.info("Audio playing: " + audio);
+    }
+
+    public static void stopMusic() {
+        musicPlayer.stop();
     }
 }

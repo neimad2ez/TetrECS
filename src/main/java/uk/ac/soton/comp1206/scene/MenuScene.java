@@ -1,12 +1,16 @@
 package uk.ac.soton.comp1206.scene;
 
+import javafx.animation.Animation;
+import javafx.animation.RotateTransition;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextAlignment;
+import javafx.util.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import uk.ac.soton.comp1206.ui.GamePane;
@@ -47,20 +51,45 @@ public class MenuScene extends BaseScene {
         var mainPane = new BorderPane();
         menuPane.getChildren().add(mainPane);
 
+        //Title layout
+        var top = new HBox();
+        top.setAlignment(Pos.CENTER);
+        top.setPadding(new Insets(50, 0, 0, 0));
+        mainPane.setTop(top);
+
         //Menu layout
-        var menu = new VBox();
+        var menu = new VBox(5);
         menu.setAlignment(Pos.CENTER);
+        menu.setPadding(new Insets(100,0,500,0));
         mainPane.setCenter(menu);
 
         //Title
-        var title = new Text("TetrECS");
-        title.getStyleClass().add("bigtitle");
+        Image image = new Image(getClass().getResourceAsStream("/images/TetrECS.png"));
+        ImageView title = new ImageView(image);
+        title.setPreserveRatio(true);
+        title.setFitHeight(140);
+        top.getChildren().add(title);
+
+        //Title animation
+        RotateTransition rt = new RotateTransition(Duration.millis(2000), title);
+        rt.setToAngle(5);
+        rt.setFromAngle(-5);
+        rt.setCycleCount(Animation.INDEFINITE);
+        rt.setAutoReverse(true);
+        rt.play();
 
         //Play button
         var play = new Text("Play");
         play.getStyleClass().add("menuItem");
         play.setOnMouseClicked(event -> {
             gameWindow.startChallenge();
+        });
+
+        //Multiplayer button
+        var multiplayer = new Text("Multiplayer");
+        multiplayer.getStyleClass().add("menuItem");
+        multiplayer.setOnMouseClicked(event -> {
+            gameWindow.startMultiplayer();
         });
 
         //Instruction button
@@ -77,11 +106,7 @@ public class MenuScene extends BaseScene {
             Platform.exit();
         });
 
-        menu.getChildren().addAll(title, play, instruction, quit);
-
-
-
-
+        menu.getChildren().addAll(play, multiplayer, instruction, quit);
     }
 
     /**

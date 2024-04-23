@@ -1,6 +1,5 @@
 package uk.ac.soton.comp1206.scene;
 
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -11,15 +10,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import uk.ac.soton.comp1206.component.GameBoard;
 import uk.ac.soton.comp1206.component.PieceBoard;
-import uk.ac.soton.comp1206.event.GameOverListener;
 import uk.ac.soton.comp1206.game.GamePiece;
-import uk.ac.soton.comp1206.game.Grid;
 import uk.ac.soton.comp1206.ui.GamePane;
 import uk.ac.soton.comp1206.ui.GameWindow;
-import uk.ac.soton.comp1206.ui.Multimedia;
-
-import java.io.FileInputStream;
-import java.io.InputStream;
 
 public class InstructionScene extends BaseScene{
     private static final Logger logger = LogManager.getLogger(InstructionScene.class);
