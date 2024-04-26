@@ -175,8 +175,6 @@ public class GameBoard extends GridPane {
     public void hover(GameBlock gameBlock) {
         hoveredBlock = gameBlock;
         hoveredBlock.hover(true);
-//        boolean canPlay = grid.canPlayPiece(game.getCurrent,hoveredBlock.getX(),hoveredBlock.getY());
-//        logger.info("canPlay is" + canPlay);
     }
 
     /**
@@ -219,10 +217,23 @@ public class GameBoard extends GridPane {
         }
     }
 
-//    public GameBlock getHoveredBlock() {
-//        if (hoveredBlock == null) {
-//            int x = 2;
-//            int y = 2;
-//    }
+    /**
+     * Resets all game blocks to unhovered
+     */
+    public void resetHover() {
+        for (GameBlock[] gameBlocks: blocks) {
+            for (GameBlock gameBlock: gameBlocks) {
+                gameBlock.hover(false);
+            }
+        }
+    }
+
+    /**
+     * Retrieve hovered block
+     * @return Current hovered block
+     */
+    public GameBlock getHoveredBlock() {
+        return hoveredBlock;
+    }
 
 }

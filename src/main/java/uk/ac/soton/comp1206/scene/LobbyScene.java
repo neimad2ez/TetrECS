@@ -6,6 +6,7 @@ import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
+import javafx.scene.control.Alert;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
@@ -16,12 +17,16 @@ import org.apache.logging.log4j.Logger;
 import uk.ac.soton.comp1206.network.Communicator;
 import uk.ac.soton.comp1206.ui.GamePane;
 import uk.ac.soton.comp1206.ui.GameWindow;
+import uk.ac.soton.comp1206.ui.Multimedia;
 
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Lobby scene which displays the lobby of a multiplayer game
+ */
 public class LobbyScene extends BaseScene{
     private static final Logger logger = LogManager.getLogger(ScoreScene.class);
     /**
@@ -40,17 +45,61 @@ public class LobbyScene extends BaseScene{
      * Checks if user is host, if they are they can start the game
      */
     Boolean isHost = false;
+    /**
+     * VBox for joining channels
+     */
     VBox channels;
+    /**
+     * VBox for the chat area
+     */
     VBox chatBox;
 
     /**
      * Stores list of channels
      */
     private ObservableList<String> channelList = FXCollections.observableArrayList();
+    /**
+     * Name of current channel user is in
+     */
     private SimpleStringProperty currentChannel = new SimpleStringProperty("");
+    /**
+     * List of users in the current channel, can be replaced if user changes nickname
+     */
     private ObservableList<String> userList = FXCollections.observableArrayList();
+    /**
+     * Title of the current channel user is in
+     */
     Text joinedChannel;
+    /**
+     * VBox for current lobby
+
+     */
     VBox currentLobby;
+    /**
+     * VBox for right side of the screen which contains all the
+
+     */
+    VBox right;
+    /**
+     * Textfield to send messages across server
+     */
+    TextField sendChat;
+    /**
+     * TextArea where chat is stored
+     */
+    TextArea chat;
+    /**
+     * Button for leaving channel
+     */
+    Text leaveChannel;
+    /**
+     * Bottom box that contains the start button
+     */
+    HBox bottomBox;
+    /**
+     * Count ensuring theres only 1 chat box
+     */
+    int count = 0;
 
 
     /**
@@ -61,7 +110,7 @@ public class LobbyScene extends BaseScene{
     public LobbyScene(GameWindow gameWindow) {
         super(gameWindow);
         com = gameWindow.getCommunicator();
-        setCommunicator();
+//        setCommunicator();
     }
 
     /**
@@ -77,37 +126,38 @@ public class LobbyScene extends BaseScene{
         });
     }
 
-
+    /**
+     * Requests current channels from the server
+     */
     public void requestCurrentChannels() {
         logger.info("Requesting current channels");
         timer = new Timer();
         requestChannels();
+        error();
         //Every 3 seconds it calls timer task (run)
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 com.send("LIST");
                 logger.info(channelList.toString());
+                gameStart();
             }
         }, 0,2000);
     }
 
     /**
-     * Sets communicator for lobby
+     * Handles error message received from the server
      */
-    public void setCommunicator() {
-        com.addListener(this::incomingMessage);
-    }
-
-    /**
-     * Handles a message received from the server
-     * @param message message from server
-     */
-    public void incomingMessage(String message) {
-        if (message.startsWith("QUIT")) {
-            logger.info("Forced to quit");
-            handleError();
-        }
+    public void error() {
+        com.addListener(message -> {
+            logger.info("Error message: " + message);
+            if (currentChannel.get() != "") {
+                if (message.startsWith("ERROR")) {
+                    logger.info("Forced to quit");
+                    Platform.runLater(() -> handleError(message));
+                }
+            }
+        });
     }
 
     /**
@@ -119,8 +169,10 @@ public class LobbyScene extends BaseScene{
                 logger.info("CHANNELS have been requested");
                 channelList.clear();
                 handleChannel(message.substring(9));
+
                 Platform.runLater(() -> channelHandler());
                 Platform.runLater(() -> setUpChannel());
+                Platform.runLater(() -> handleUsers());
                 Platform.runLater(() -> setUpChat());
             }
         });
@@ -138,7 +190,7 @@ public class LobbyScene extends BaseScene{
                 logger.info("Joining another channel");
                 String channel = message.substring(5);
                 logger.info(channel);
-                Platform.runLater(() -> joinChannel(channelName));
+                joinChannel(channel);
                 handleUsers();
                 handleNick();
             }
@@ -147,6 +199,18 @@ public class LobbyScene extends BaseScene{
             logger.info("Joining channel " + channelName);
             com.send("JOIN " + channelName);
         }
+    }
+
+    /**
+     * Game started by host
+     */
+    public void gameStart() {
+        com.addListener(message -> {
+            if (message.startsWith("START")) {
+                Multimedia.stopMusic();
+                gameWindow.startMultiplayerScene();
+            }
+        });
     }
 
     /**
@@ -161,6 +225,7 @@ public class LobbyScene extends BaseScene{
                 userList.addAll(users);
             }
         });
+        com.send("USERS");
     }
 
     /**
@@ -170,7 +235,8 @@ public class LobbyScene extends BaseScene{
     public void joinChannel(String channelName) {
         logger.info("Channel joined: " + channelName);
         channelList.add(channelName);
-        currentChannel.set(channelName);
+        Platform.runLater(() -> currentChannel.set(channelName));
+
     }
 
     /**
@@ -198,14 +264,14 @@ public class LobbyScene extends BaseScene{
             if (message.startsWith("NICK")) {
                 message = message.substring(5);
                 String[] nicks = message.split(":");
-                int count = 1;
+                int nickCount = 1;
                 if (nicks.length > 1) {
                     for (String s: userList) {
                         if (s == nicks[0]) {
-                            logger.info(count + " and name is: " + nicks[1]);
-                            userList.set(count, nicks[1]);
+                            logger.info(nickCount + " and name is: " + nicks[1]);
+                            userList.set(nickCount, nicks[1]);
                         } else {
-                            count++;
+                            nickCount++;
                         }
                     }
                 }
@@ -219,7 +285,12 @@ public class LobbyScene extends BaseScene{
      */
     public void setUpChannel() {
         currentLobby.getChildren().clear();
+        right.getChildren().clear();
         if (currentChannel.get() != "") {
+            bottomBox.getChildren().clear();
+
+            right.getChildren().addAll(currentLobby, chatBox);
+
             //Channel name
             joinedChannel = new Text(currentChannel.get());
             joinedChannel.getStyleClass().add("title");
@@ -234,19 +305,50 @@ public class LobbyScene extends BaseScene{
             }
 
             //Leave channel
-            Text leaveChannel = new Text("Leave Channel");
+            leaveChannel = new Text("Leave Channel");
             leaveChannel.getStyleClass().add("heading");
             leaveChannel.setOnMouseClicked(event -> {
             leaveChannel();
-        });
+            });
 
-            currentLobby.getChildren().addAll(joinedChannel, userBox, leaveChannel);
+            //Start game
+            Text startGame = new Text("Start");
+            startGame.getStyleClass().add("menuItem");
+            startGame.setOnMouseClicked(event -> {
+                if (isHost) {
+                    com.send("START");
+                    Multimedia.stopMusic();
+                    gameWindow.startMultiplayerScene();
+                } else {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("ERROR - Not host");
+                    alert.setHeaderText("You are not the host of this channel");
+                    alert.setContentText("Only the host can start the game");
+                    alert.showAndWait();
+                }
+            });
+
+            bottomBox.getChildren().add(startGame);
+            currentLobby.getChildren().addAll(joinedChannel, userBox);
+            right.getChildren().add(leaveChannel);
+
         }
     }
 
+    /**
+     * Sets up chat for user
+     */
     public void setUpChat() {
         if (currentChannel.get() != "") {
-            var chat = new TextArea();
+            if (count == 0) {
+                count = count + 1;
+                chat = new TextArea();
+                chat.setEditable(false);
+                sendChat = new TextField();
+                sendChat.setPromptText("Send chat message");
+                sendChat.setOnAction(event -> sendMessage(sendChat.getText()));
+                chatBox.getChildren().addAll(chat, sendChat);
+            }
         }
     }
 
@@ -255,9 +357,10 @@ public class LobbyScene extends BaseScene{
      * @param message message to be sent on chat
      */
     public void sendMessage(String message) {
-        com.addListener(msg -> {
-
-        });
+        if (!message.isEmpty()) {
+            com.send("MSG " + message);
+        }
+        sendChat.clear();
     }
 
     /**
@@ -269,6 +372,16 @@ public class LobbyScene extends BaseScene{
                 currentChannel.set("");
             }
         });
+
+        //Removing all the elements when you leave current lobby
+        chatBox.getChildren().clear();
+        count = 0;
+
+        //Remove all the elements when you leave current lobby
+        right.getChildren().clear();
+
+        bottomBox.getChildren().clear();
+
         com.send("PART");
     }
 
@@ -309,8 +422,15 @@ public class LobbyScene extends BaseScene{
         }
     }
 
-    public void handleError() {
-
+    /**
+     * Handles error messages
+     * @param message error message
+     */
+    public void handleError(String message) {
+        logger.info("ERROR IS: " + message);
+        Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+        errorAlert.setContentText(message);
+        errorAlert.showAndWait();
     }
 
 
@@ -333,17 +453,28 @@ public class LobbyScene extends BaseScene{
         var borderPane = new BorderPane();
         challengePane.getChildren().add(borderPane);
 
+        //Top box
+        var top = new HBox();
+        top.setSpacing(105);
+        borderPane.setTop(top);
+
+        //Top left box
+        var topLeft = new VBox();
+        topLeft.setAlignment(Pos.TOP_LEFT);
+        topLeft.setSpacing(50);
+        top.getChildren().add(topLeft);
+
         //Available channels box
         channels = new VBox();
         channels.setAlignment(Pos.TOP_LEFT);
         channels.setMaxHeight(100);
-        borderPane.setTop(channels);
+        topLeft.getChildren().add(channels);
 
-        //Left box
+        //Left top box
         var left = new VBox();
         left.setSpacing(10);
         left.setAlignment(Pos.CENTER);
-        borderPane.setLeft(left);
+        topLeft.getChildren().add(left);
 
         //Create channel box
         var createBox = new VBox();
@@ -397,21 +528,35 @@ public class LobbyScene extends BaseScene{
         });
         createBox.getChildren().add(createChannel);
 
+        right = new VBox();
+        right.setAlignment(Pos.CENTER_RIGHT);
+        top.getChildren().add(right);
 
         //Lobby
         currentLobby = new VBox();
-        borderPane.setRight(currentLobby);
+        right.getChildren().add(currentLobby);
 
         //Chat box
         chatBox = new VBox();
-
+        chatBox.setAlignment(Pos.CENTER);
+        right.getChildren().add(chatBox);
 
         channelHandler();
-
         setUpChannel();
-
+        setUpChat();
         requestCurrentChannels();
 
+        //Listens for messages
+        com.addListener(msg -> {
+            if (msg.startsWith("MSG")) {
+                chat.appendText(msg.substring(4) + "\n");
+            }
+        });
+
+        //Bottom box to start game
+        bottomBox = new HBox();
+        bottomBox.setAlignment(Pos.CENTER);
+        borderPane.setBottom(bottomBox);
     }
 
 

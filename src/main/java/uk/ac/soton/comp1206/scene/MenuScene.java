@@ -82,13 +82,15 @@ public class MenuScene extends BaseScene {
         var play = new Text("Play");
         play.getStyleClass().add("menuItem");
         play.setOnMouseClicked(event -> {
-            gameWindow.startChallenge();
+            Multimedia.playAudio("bloop.mp3");
+            gameWindow.startDifficulty();
         });
 
         //Multiplayer button
         var multiplayer = new Text("Multiplayer");
         multiplayer.getStyleClass().add("menuItem");
         multiplayer.setOnMouseClicked(event -> {
+            Multimedia.playAudio("bloop.mp3");
             gameWindow.startMultiplayer();
         });
 
@@ -96,12 +98,14 @@ public class MenuScene extends BaseScene {
         var instruction = new Text("Instructions");
         instruction.getStyleClass().add("menuItem");
         instruction.setOnMouseClicked(event -> {
+            Multimedia.playAudio("bloop.mp3");
             gameWindow.startInstructions();
         });
 
         //Quit button
         var quit = new Text("Quit");
         quit.getStyleClass().add("menuItem");
+        Multimedia.playAudio("bloop.mp3");
         quit.setOnMouseClicked(event -> {
             Platform.exit();
         });
@@ -123,7 +127,7 @@ public class MenuScene extends BaseScene {
      * @param event event
      */
     private void startGame(ActionEvent event) {
-        gameWindow.startChallenge();
+        gameWindow.startChallenge("normal");
     }
 
 }

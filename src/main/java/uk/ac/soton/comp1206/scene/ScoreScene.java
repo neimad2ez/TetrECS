@@ -30,6 +30,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 
+/**
+ * ScoreScene class that displays the scores achieved for solo game
+
+ */
 public class ScoreScene extends BaseScene{
     private final Game game1;
     Communicator com;
@@ -49,8 +53,6 @@ public class ScoreScene extends BaseScene{
     private ScoresList onlineScoreList;
 
     private static final Logger logger = LogManager.getLogger(ScoreScene.class);
-    private Text test;
-    private Text test1;
 
     /**
      * Create a new score scene
@@ -273,7 +275,7 @@ public class ScoreScene extends BaseScene{
         var retry = new Text("Retry");
         retry.getStyleClass().add("menuItem");
         retry.setOnMouseClicked(event -> {
-            gameWindow.startChallenge();
+            gameWindow.startChallenge(game1.mode);
         });
 
         //Main menu

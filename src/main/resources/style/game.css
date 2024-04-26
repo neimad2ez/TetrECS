@@ -44,7 +44,7 @@
 }
 
 .bigtitle {
-    -fx-fill: purple;
+    -fx-fill: white;
     -fx-font-family: 'Orbitron';
     -fx-font-size: 64px;
     -fx-font-weight: 900;
@@ -56,7 +56,7 @@
 .title {
     -fx-fill: white;
     -fx-font-family: 'Orbitron';
-    -fx-font-size: 32px;
+    -fx-font-size: 28px;
     -fx-font-weight: 900;
     -fx-border-color: black;
     -fx-stroke: black;

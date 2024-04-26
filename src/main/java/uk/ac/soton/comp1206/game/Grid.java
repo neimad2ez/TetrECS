@@ -178,6 +178,9 @@ public class Grid {
         }
     }
 
+    /**
+     * All lines are cleared
+     */
     public void clear() {
         logger.info("Lines cleared are all set back to 0");
         for (int x = 0; x < rows; x++) {

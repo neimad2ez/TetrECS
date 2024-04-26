@@ -8,10 +8,8 @@ import org.apache.logging.log4j.Logger;
 import uk.ac.soton.comp1206.component.GameBlock;
 import uk.ac.soton.comp1206.component.GameBlockCoordinate;
 import uk.ac.soton.comp1206.component.GameBoard;
-import uk.ac.soton.comp1206.event.GameLoopListener;
-import uk.ac.soton.comp1206.event.GameOverListener;
-import uk.ac.soton.comp1206.event.LineClearedListener;
-import uk.ac.soton.comp1206.event.NextPieceListener;
+import uk.ac.soton.comp1206.event.*;
+import uk.ac.soton.comp1206.scene.ChallengeScene;
 import uk.ac.soton.comp1206.ui.Multimedia;
 
 import java.util.HashSet;
@@ -46,7 +44,7 @@ public class Game {
     /**
      * Current game piece
      */
-    public GamePiece currentPiece = spawnPiece();
+    public GamePiece currentPiece;
     /**
      * Next game piece which can be swapped with current piece
      */
@@ -80,9 +78,12 @@ public class Game {
      */
     protected LineClearedListener lineClearedListener = null;
     /**
-     * Calls gameLoop method
+     * Calls gameLoop method, timer that schedules commands after certain delay
      */
     protected ScheduledExecutorService timer;
+    /**
+     * Represents a task that can be run at a specific time or repeatedly
+     */
     protected ScheduledFuture<?> loop;
     /**
      * Game loop listener
@@ -92,6 +93,14 @@ public class Game {
      * Game over listener
      */
     protected GameOverListener gameOverListener = null;
+    /**
+     * Old value of level
+     */
+    private int oldLevel = 0;
+    /**
+     * Current game mode
+     */
+    public String mode;
 
     /**
      * Create a new game with the specified rows and columns. Creates a corresponding grid model.
@@ -121,7 +130,9 @@ public class Game {
         }
     }
 
-
+    /**
+     * Initialise a new game and set up anything needed to start the game
+     */
     public void initialiseGame() {
         logger.info("Initialising game");
         this.nextPiece = spawnPiece();
@@ -151,19 +162,12 @@ public class Game {
         } else {
             Multimedia.playAudio("fail.wav");
         }
-
-
-//        //Get the new value for this block
-//        int previousValue = grid.get(x,y);
-//        int newValue = previousValue + 1;
-//        if (newValue  > GamePiece.PIECES) {
-//            newValue = 0;
-//        }
-//
-//        //Update the grid with the new value
-//        grid.set(x,y,newValue);
     }
 
+    /**
+     * Retrieve current piece
+     * @return Return current piece
+     */
     public GamePiece getCurrentPiece() {
         return currentPiece;
     }
@@ -193,8 +197,7 @@ public class Game {
     }
 
     /**
-     *Retrieves a newly created piece
-     * @return returns next piece to be put onto grid
+     *Changes current piece to the next piece and reassigns nextpiece a new piece
      */
     public void nextPiece() {
         logger.info("Next piece is created");
@@ -307,7 +310,6 @@ public class Game {
                 grid.set(x,y,0);
             }
         }
-//        gameBoard.fadeOut(cleared);
         if (lineClearedListener != null) {
             lineClearedListener.lineCleared(cleared);
         }
@@ -321,7 +323,7 @@ public class Game {
      * @param numOfLines number of lines cleared
      * @param numOfBlocks number of blocks cleared
      */
-    public void score(int numOfLines, int numOfBlocks) {
+    protected void score(int numOfLines, int numOfBlocks) {
         logger.info("Method which implements the scoring system");
         //If number of lines cleared = 0 then there is no score to be added
         if (numOfLines == 0) {
@@ -356,6 +358,18 @@ public class Game {
     public void level() {
         logger.info("Method that implements the different levels a user is on");
         level.setValue(score.get() / 1000);
+        levelSound(level.get());
+    }
+
+    /**
+     * Plays a sound when level changes
+     * @param newLevel Level retrieved recently
+     */
+    public void levelSound(int newLevel) {
+        if (newLevel != oldLevel) {
+            Multimedia.playAudio("level.wav");
+            oldLevel = newLevel;
+        }
     }
 
     /**
@@ -388,7 +402,15 @@ public class Game {
      * Calculates delay at the maximum of 2500 ms or 12000-500*current level
      */
     public int getTimerDelay() {
-        return Math.max(12000 - 500 * level.get(), 2500);
+        if (mode.equals("easy")) {
+            return Math.max(20000 - 500 * level.get(), 2500);
+        } else if (mode.equals("normal")) {
+            return Math.max(12000 - 500 * level.get(), 2500);
+        } else if (mode.equals("challenge")) {
+            return Math.max(10000 - 500 * level.get(), 2500);
+        } else {
+            return Math.max(12000 - 500 * level.get(), 2500);
+        }
     }
 
     /**
@@ -409,6 +431,11 @@ public class Game {
         }
     }
 
+    public void select(String mode) {
+        logger.info("Selected mode: " + mode);
+        this.mode = mode;
+    }
+
     /**
      * Events that happen when timer ends
      */
@@ -417,18 +444,13 @@ public class Game {
         updateMultiplier();
         nextPiece();
         gameLoopListener();
-//        if (lives.get() > 0) {
-//            updateMultiplier();
-//            nextPiece();
-//            gameLoopListener();
-//        }
         loop = timer.schedule(this::gameLoop, getTimerDelay(), TimeUnit.MILLISECONDS);
     }
 
     /**
      * Removes a life or stops game when there are no lives left
      */
-    public void updateLives() {
+    protected void updateLives() {
         if (lives.get() > 0) {
             logger.info("Life lost");
             lives.set(lives.get() - 1);
@@ -443,7 +465,7 @@ public class Game {
         }
     }
     /**
-     *
+     * Shuts the timer down and stops the game loop
      */
     public void shutdown() {
         gameLoopListener.setOnGameLoop(0);
@@ -459,6 +481,10 @@ public class Game {
         multiplier.set(1);
     }
 
+    /**
+     * Listener for game over
+     * @param gameOverListener gameOverListener variable
+     */
     public void setOnGameOver(GameOverListener gameOverListener) {
         this.gameOverListener = gameOverListener;
     }

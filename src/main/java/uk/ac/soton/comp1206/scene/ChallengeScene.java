@@ -7,10 +7,10 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -23,6 +23,7 @@ import uk.ac.soton.comp1206.component.GameBlock;
 import uk.ac.soton.comp1206.component.GameBlockCoordinate;
 import uk.ac.soton.comp1206.component.GameBoard;
 import uk.ac.soton.comp1206.component.PieceBoard;
+import uk.ac.soton.comp1206.event.ModeListener;
 import uk.ac.soton.comp1206.game.Game;
 import uk.ac.soton.comp1206.game.GamePiece;
 import uk.ac.soton.comp1206.ui.GamePane;
@@ -44,15 +45,15 @@ public class ChallengeScene extends BaseScene {
     /**
      * Game class
      */
-    protected Game game;
+    private Game soloGame;
     /**
      * Rectangle used for timer
      */
-    private Rectangle timerBar;
+    public Rectangle timerBar;
     /**
      * HBox to put on to mainpane
      */
-    private HBox timerBox;
+    public HBox timerBox;
 
     /**
      * Current pieceboard to place down
@@ -71,16 +72,26 @@ public class ChallengeScene extends BaseScene {
      */
 
     public IntegerProperty highScore = new SimpleIntegerProperty();
+    /**
+     * Current game mode
+     */
+    public String mode;
+
 
     /**
      * Create a new Single Player challenge scene
      * @param gameWindow the Game Window
      */
-    public ChallengeScene(GameWindow gameWindow) {
+    public ChallengeScene(GameWindow gameWindow, String mode) {
         super(gameWindow);
         logger.info("Creating Challenge Scene");
+        this.mode = mode;
         int currentHighscore = getHighScore();
         highScore.set(currentHighscore);
+    }
+
+    public void setUpGame() {
+        soloGame = new Game(5,5);
     }
 
     /**
@@ -91,6 +102,8 @@ public class ChallengeScene extends BaseScene {
         logger.info("Building " + this.getClass().getName());
 
         setupGame();
+
+        sendMode();
 
         root = new GamePane(gameWindow.getWidth(),gameWindow.getHeight());
 
@@ -124,7 +137,7 @@ public class ChallengeScene extends BaseScene {
         var score = new Text();
         score.getStyleClass().add("score");
         //Binds score's textProperty to the IntegerProperty saved in Game class.
-        score.textProperty().bind(game.score.asString());
+        score.textProperty().bind(soloGame.score.asString());
         scoreBox.getChildren().addAll(scoreText, score);
 
         //Lives
@@ -134,7 +147,7 @@ public class ChallengeScene extends BaseScene {
         livesText.getStyleClass().add("heading");
         var lives = new Text();
         lives.getStyleClass().add("lives");
-        lives.textProperty().bind(game.lives.asString());
+        lives.textProperty().bind(soloGame.lives.asString());
         livesBox.getChildren().addAll(livesText, lives);
 
 
@@ -162,7 +175,7 @@ public class ChallengeScene extends BaseScene {
         //Multiplier
         var multiplier = new Text();
         multiplier.getStyleClass().add("hiscore");
-        multiplier.textProperty().bind(game.multiplier.asString());
+        multiplier.textProperty().bind(soloGame.multiplier.asString());
 
         //Multipler box
         var multiplierBox = new VBox();
@@ -223,7 +236,7 @@ public class ChallengeScene extends BaseScene {
         //Level
         var level = new Text();
         level.getStyleClass().add("level");
-        level.textProperty().bind(game.level.asString());
+        level.textProperty().bind(soloGame.level.asString());
 
         //Level box
         var levelBox = new VBox();
@@ -234,7 +247,7 @@ public class ChallengeScene extends BaseScene {
         left.getChildren().addAll(highscoreBox, levelBox, multiplierBox);
 
         //Made board into global variable
-        board = new GameBoard(game.getGrid(),gameWindow.getWidth()/2,gameWindow.getWidth()/2);
+        board = new GameBoard(soloGame.getGrid(),gameWindow.getWidth()/2,gameWindow.getWidth()/2);
         board.setPadding(new Insets(0, 70, 0, 30));
         mainPane.setCenter(board);
 
@@ -254,30 +267,35 @@ public class ChallengeScene extends BaseScene {
         timerBar.setFill(Color.GREEN);
         timerBox.getChildren().addAll(timerBar);
         mainPane.setBottom(timerBox);
+    }
 
-        Button button = new Button();
-        button.setOnMouseClicked(event -> {
-            gameOver();
-        });
-        left.getChildren().add(button);
+    /**
+     * Send mode to Game class
+     */
+    private void sendMode() {
+        soloGame.select(mode);
     }
 
     /**
      * Handle when a block is clicked
      * @param gameBlock the Game Block that was clocked
      */
-    private void blockClicked(GameBlock gameBlock) {
-        game.blockClicked(gameBlock);
+    void blockClicked(GameBlock gameBlock) {
+        soloGame.blockClicked(gameBlock);
         //Checks if score is greater than high score, if greater, high score becomes current score
-        if (game.score.getValue() > getHighScore()) {
+        if (soloGame.score.getValue() > getHighScore()) {
             logger.info("New highscore: "+ highScore);
-            highScore.set(game.score.getValue());
+            highScore.set(soloGame.score.getValue());
         }
     }
 
+    /**
+     * Next piece
+     * @param gp GamePiece
+     */
     public void nextPiece(GamePiece gp) {
-        currentPieceBoard.setPiece(game.currentPiece);
-        nextPieceBoard.setPiece(game.nextPiece);
+        currentPieceBoard.setPiece(soloGame.currentPiece);
+        nextPieceBoard.setPiece(soloGame.nextPiece);
     }
 
     /**
@@ -298,7 +316,7 @@ public class ChallengeScene extends BaseScene {
         logger.info("Starting a new challenge");
 
         //Start new game
-        game = new Game(5, 5);
+        soloGame = new Game(5, 5);
     }
 
     /**
@@ -307,8 +325,8 @@ public class ChallengeScene extends BaseScene {
     public void rotate() {
         logger.info("Block rotated");
         Multimedia.playAudio("rotate.wav");
-        game.rotateCurrentPiece(game.currentPiece);
-        currentPieceBoard.setPiece(game.currentPiece);
+        soloGame.rotateCurrentPiece(soloGame.currentPiece);
+        currentPieceBoard.setPiece(soloGame.currentPiece);
     }
 
     /**
@@ -316,20 +334,74 @@ public class ChallengeScene extends BaseScene {
      */
     public void swapPiece() {
         Multimedia.playAudio("pling.wav");
-        game.swapCurrentPiece();
-        currentPieceBoard.setPiece(game.currentPiece);
-        nextPieceBoard.setPiece(game.nextPiece);
+        soloGame.swapCurrentPiece();
+        currentPieceBoard.setPiece(soloGame.currentPiece);
+        nextPieceBoard.setPiece(soloGame.nextPiece);
     }
 
     /**
      * Keyboard support for the game for example W moves up, A moves left etc.
      */
-    public void keyboardSupport() {
-        scene.setOnKeyPressed(event -> {
-            if (event.equals(KeyCode.W)) {
+    public void keyboardSupport(KeyEvent key) {
+        logger.info("Key is pressed");
+        var keyboard = key.getCode();
 
+        int x = board.getHoveredBlock().getX();
+        int y = board.getHoveredBlock().getY();
+
+        //Place piece
+        if (keyboard.equals(KeyCode.ENTER) || keyboard.equals(KeyCode.X)) {
+            blockClicked(board.getBlock(x,y));
+        }
+
+        //Move up
+        if (keyboard.equals(KeyCode.W) || keyboard.equals(KeyCode.UP) && y > 0) {
+            y--;
+        }
+
+        //Move left
+        if (keyboard.equals(KeyCode.A) || keyboard.equals(KeyCode.LEFT) && x > 0) {
+            x--;
+        }
+
+        //Move down
+        if (keyboard.equals(KeyCode.S) || keyboard.equals(KeyCode.DOWN) && y < 5) {
+            y++;
+        }
+
+        //Move right
+        if (keyboard.equals(KeyCode.D) || keyboard.equals(KeyCode.RIGHT) && x < 5) {
+            x++;
+        }
+
+        //Swap pieces
+        if (keyboard.equals(KeyCode.SPACE) || keyboard.equals(KeyCode.R) && x > 0) {
+            swapPiece();
+        }
+
+        //Left rotation
+        if (keyboard.equals(KeyCode.Q) || keyboard.equals(KeyCode.Z) || keyboard.equals(KeyCode.OPEN_BRACKET)) {
+            for (int i = 0; i < 3; i++) {
+                rotate();
             }
-        });
+        }
+
+        //Rotate right
+        if (keyboard.equals(KeyCode.E) || keyboard.equals(KeyCode.C) || keyboard.equals(KeyCode.CLOSE_BRACKET)) {
+            rotate();
+        }
+
+        //Discard block and reset game loop
+        if (keyboard.equals(KeyCode.V)) {
+            soloGame.gameLoop();
+        }
+
+        //Clear all hovered blocks
+        board.resetHover();
+
+        // Update the new hovered block
+        GameBlock newHoveredBlock = board.getBlock(x, y);
+        board.hover(newHoveredBlock);
     }
 
     /**
@@ -340,9 +412,13 @@ public class ChallengeScene extends BaseScene {
         timerBar.setWidth(0);
         timerBar.setHeight(0);
         timerBar.setOpacity(0);
-        gameWindow.startScores(game);
+        gameWindow.startScores(soloGame);
     }
 
+    /**
+     * Reads localScores.txt file and extracts data to find high scores
+     * @return
+     */
     public int getHighScore() {
         logger.info("Updated high score");
         try {
@@ -382,18 +458,20 @@ public class ChallengeScene extends BaseScene {
     @Override
     public void initialise() {
         logger.info("Initialising Challenge");
-        game.setOnGameLoop(this::timerAnimation);
-        game.start();
-        currentPieceBoard.setPiece(game.currentPiece);
-        nextPieceBoard.setPiece(game.nextPiece);
+        soloGame.setOnGameLoop(this::timerAnimation);
+        soloGame.start();
+        currentPieceBoard.setPiece(soloGame.currentPiece);
+        nextPieceBoard.setPiece(soloGame.nextPiece);
         Multimedia.playMusic("game_start.wav");
-        game.setOnLineCleared(this::fadeOut);
-        game.setNextPieceListener(this::nextPiece);
-        game.setOnGameOver(this::gameOver);
-//        game.setOnGameLoop(new GameLoopListener(){} );
+        soloGame.setOnLineCleared(this::fadeOut);
+        soloGame.setNextPieceListener(this::nextPiece);
+        soloGame.setOnGameOver(this::gameOver);
         scene.setOnKeyPressed(event -> {
+            logger.info("This one works");
+            keyboardSupport(event);
             if (event.getCode().equals(KeyCode.ESCAPE)) {
                 gameWindow.startMenu();
+                soloGame.shutdown();
             }
         });
         scene.setOnMouseClicked(event -> {

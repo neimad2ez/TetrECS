@@ -8,10 +8,14 @@ import uk.ac.soton.comp1206.game.Game;
 
 import java.io.File;
 
+/**
+ * Multimedia class that handles audio and music
+
+ */
 public class Multimedia {
     private static final Logger logger = LogManager.getLogger(Game.class);
-    private static MediaPlayer audioPlayer;
-    private static MediaPlayer musicPlayer;
+    public static MediaPlayer audioPlayer;
+    public static MediaPlayer musicPlayer;
     private static boolean running = false;
 
     /**
@@ -42,6 +46,9 @@ public class Multimedia {
         logger.info("Audio playing: " + audio);
     }
 
+    /**
+     * Stops music
+     */
     public static void stopMusic() {
         musicPlayer.stop();
     }

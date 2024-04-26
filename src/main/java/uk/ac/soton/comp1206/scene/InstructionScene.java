@@ -14,10 +14,13 @@ import uk.ac.soton.comp1206.game.GamePiece;
 import uk.ac.soton.comp1206.ui.GamePane;
 import uk.ac.soton.comp1206.ui.GameWindow;
 
+/**
+ * Instruction scene that displays the instructions of the game
+
+ */
 public class InstructionScene extends BaseScene{
     private static final Logger logger = LogManager.getLogger(InstructionScene.class);
 
-    private GameBoard gb;
 
     /**
      * Create a new scene, passing in the GameWindow the scene will be displayed in
@@ -57,12 +60,18 @@ public class InstructionScene extends BaseScene{
         root.getChildren().add(instructionPane);
 
         //Title
-        var top = new HBox();
+        var top = new VBox();
         top.setAlignment(Pos.CENTER);
         instructionPane.setTop(top);
         var instructionsTitle = new Text("Instructions");
-        instructionsTitle.getStyleClass().add("bigtitle");
+        instructionsTitle.getStyleClass().add("title");
         top.getChildren().add(instructionsTitle);
+
+        //Text description
+        var description = new Text("A fast-paced block placement game where you have a 5x5 grid, and you must place pieces in that grid, scoring points by clearing lines, " + "\n" + " horizontally or vertically.");
+        description.getStyleClass().add("instructions");
+        description.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        top.getChildren().add(description);
 
         //Content of Instructions
         var middle = new VBox();
@@ -71,7 +80,7 @@ public class InstructionScene extends BaseScene{
 
         //Default pieces text
         var piecesText = new Text("Default Pieces");
-        piecesText.getStyleClass().add("title");
+        piecesText.getStyleClass().add("heading");
 
         //Creating the grids of the 15 default pieces
         var pieces = new GridPane();
@@ -79,15 +88,11 @@ public class InstructionScene extends BaseScene{
         pieces.setVgap(10);
         pieces.setAlignment(Pos.CENTER);
 
-        //Image text
-        var instructionText = new Text("Instructions");
-        instructionText.getStyleClass().add("title");
-
         //Image
-        Image instructions = new Image("C:\\Users\\neimad\\Documents\\COMP1206cwk\\coursework\\src\\main\\resources\\images\\controls.png");
+        Image instructions = new Image("C:\\Users\\neimad\\Documents\\COMP1206cwk\\coursework\\src\\main\\resources\\images\\Instructions.png");
         ImageView instructionView = new ImageView(instructions);
-        instructionView.setFitHeight(300);
-        instructionView.setFitWidth(600);
+        instructionView.setPreserveRatio(true);
+        instructionView.setFitHeight(360);
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 5; j++) {
@@ -102,7 +107,7 @@ public class InstructionScene extends BaseScene{
             }
         }
 
-        middle.getChildren().addAll(instructionText,instructionView,piecesText,pieces);
+        middle.getChildren().addAll(instructionView,piecesText,pieces);
     }
 
 }

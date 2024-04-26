@@ -14,6 +14,10 @@ import uk.ac.soton.comp1206.scene.MenuScene;
 
 import java.util.ArrayList;
 
+/**
+ * ScoresList class that displays the scores achieved
+
+ */
 public class ScoresList extends VBox {
     private static final Logger logger = LogManager.getLogger(ScoresList.class);
     /**
@@ -26,6 +30,10 @@ public class ScoresList extends VBox {
      */
     private ArrayList<Text> scores = new ArrayList<>();
     //Recreate list everytime a new score is added
+
+    /**
+     * Creates a new ScoreList
+     */
     public ScoresList() {
         scoresList.addListener((ListChangeListener<Pair<String, Integer>>) change -> {
             createList();
@@ -56,6 +64,9 @@ public class ScoresList extends VBox {
         createList();
     }
 
+    /**
+     * Reveal animation for scores
+     */
     public void reveal() {
         int initialDelay = 0;
         for (Text text: scores) {
