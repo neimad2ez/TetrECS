@@ -458,11 +458,13 @@ public class ChallengeScene extends BaseScene {
     @Override
     public void initialise() {
         logger.info("Initialising Challenge");
+        //When gameloop is reset or ends, timer is updated and getTimerDelay is passed in
         soloGame.setOnGameLoop(this::timerAnimation);
         soloGame.start();
         currentPieceBoard.setPiece(soloGame.currentPiece);
         nextPieceBoard.setPiece(soloGame.nextPiece);
         Multimedia.playMusic("game_start.wav");
+        //Links fadeOut method with lineCleared in interface due to same method signature.
         soloGame.setOnLineCleared(this::fadeOut);
         soloGame.setNextPieceListener(this::nextPiece);
         soloGame.setOnGameOver(this::gameOver);

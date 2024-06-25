@@ -80,10 +80,12 @@ public class Game {
     /**
      * Calls gameLoop method, timer that schedules commands after certain delay
      */
+    //Single thread executor that can schedule commands to run
     protected ScheduledExecutorService timer;
     /**
      * Represents a task that can be run at a specific time or repeatedly
      */
+    //Scheduled future calls the scheduled executor service after a given delay
     protected ScheduledFuture<?> loop;
     /**
      * Game loop listener
@@ -113,7 +115,7 @@ public class Game {
 
         //Create a new grid model to represent the game state
         this.grid = new Grid(cols,rows);
-        //Creates a single threaded scheduled executor
+        //Creates a single threaded scheduled executor, so you can only execute one thread at a time
         timer = Executors.newSingleThreadScheduledExecutor();
     }
 
@@ -157,7 +159,7 @@ public class Game {
             nextPiece();
             //Cancels loop
             loop.cancel(false);
-            //Restarts loop
+            //Restarts loop, executes gameLoop and getTimerDelay method after loop is called
             loop = timer.schedule(this::gameLoop, getTimerDelay(), TimeUnit.MILLISECONDS);
         } else {
             Multimedia.playAudio("fail.wav");
@@ -209,6 +211,7 @@ public class Game {
         logger.info("Current piece is " + currentPiece);
         logger.info("Next piece is " + nextPiece);
         //If next piece occurs, call nextPiece method on currentPiece to get the next piece from nextPiece variable
+        //same object references as in challenge scene
         if (nextPieceListener != null) {
             nextPieceListener.nextPiece(currentPiece);
         }
@@ -218,6 +221,7 @@ public class Game {
      * Listens for next piece
      * @param listener Next Piece Listener
      */
+    //Pass in parameter and then copy over object reference
     public void setNextPieceListener(NextPieceListener listener) {
         nextPieceListener = listener;
     }
